@@ -4,7 +4,8 @@ import { NextResponse } from 'next/server'
 // Define public routes that don't require authentication
 const isPublicRoute = createRouteMatcher([
   '/',
-  '/auth(.*)',
+  '/sign-in',
+  '/sign-up',
   '/portal(.*)',
   '/images(.*)',
   '/chatbot',
@@ -28,13 +29,13 @@ export default clerkMiddleware(async (auth, req) => {
       if (!userId) {
         console.log('User not authenticated, redirecting...')
         // Redirect to sign-in page
-        return NextResponse.redirect(new URL('/auth/sign-in', req.url))
+        return NextResponse.redirect(new URL('/sign-in', req.url))
       }
       
       console.log('User authenticated:', userId)
     } catch (error) {
       console.log('Auth error, redirecting to sign-in')
-      return NextResponse.redirect(new URL('/auth/sign-in', req.url))
+      return NextResponse.redirect(new URL('/sign-in', req.url))
     }
   }
   
