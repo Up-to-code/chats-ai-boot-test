@@ -6,9 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useSignIn } from "@clerk/nextjs";
-
+import { useSignIn, useUser } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
+ 
 function Page() {
+   const user = useUser();
+   if (user){
+      redirect('/dashboard');
+   };
+ 
   const { signIn, isLoaded, setActive } = useSignIn();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");

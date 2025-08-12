@@ -9,14 +9,29 @@ import StepUserDetails from "@/components/auth/StepUserDetails";
 import StepOTPVerify from "@/components/auth/StepOTPVerify";
 import StepFinish from "@/components/auth/StepFinish";
 import StepProgressBar from "@/components/auth/StepProgressBar";
-import { useSignUp } from "@clerk/nextjs";
+import { useSignUp, useUser } from "@clerk/nextjs";
 import { Loader2 } from "lucide-react";
+import { onCompleteUserRegistration } from "@/actions/auth";
+import { redirect } from "next/navigation";
 
 type Step = 1 | 2 | 3 | 4;
 
 export default function SignupPage() {
-  const { step, nextStep, userType, name, email, password, reset } = useStupes();
-  
+  const user = useUser();
+  if (user) {
+    redirect("/dashboard");
+  }
+
+  const {
+    step,
+    nextStep,
+    userType,
+    name,
+    email,
+    password,
+    reset,
+  } = useStupes();
+
   const [isRTL, setIsRTL] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,10 +50,10 @@ export default function SignupPage() {
 
   const handleUserDetailsSubmit = async () => {
     if (!isLoaded) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       if (!email || !password || !name) {
         throw new Error("Please fill in all required fields");
@@ -47,20 +62,20 @@ export default function SignupPage() {
       await signUp.create({
         emailAddress: email,
         password,
-        unsafeMetadata: { 
+        unsafeMetadata: {
           type: userType,
-          name: name
+          name: name,
         },
       });
 
-      await signUp.prepareEmailAddressVerification({ 
-        strategy: "email_code" 
+      await signUp.prepareEmailAddressVerification({
+        strategy: "email_code",
       });
-      
+
       nextStep();
-    } catch (err: any) {
+    } catch (err : any) {
       console.error("Clerk signUp error:", err);
-      
+
       if (err?.errors?.[0]?.message) {
         setError(err.errors[0].message);
       } else if (err?.message) {
@@ -75,10 +90,10 @@ export default function SignupPage() {
 
   const handleOTPVerify = async (otp: string) => {
     if (!isLoaded) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       if (!otp || otp.length !== 6) {
         throw new Error("Please enter a valid 6-digit verification code");
@@ -87,16 +102,17 @@ export default function SignupPage() {
       const result = await signUp.attemptEmailAddressVerification({
         code: otp,
       });
-      
+
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
+        await onCompleteUserRegistration(name, email, userType);
         nextStep();
       } else {
         throw new Error("Verification incomplete. Please try again.");
       }
-    } catch (err: any) {
+    } catch (err : any) {
       console.error("OTP verify error:", err);
-      
+
       if (err?.errors?.[0]?.message) {
         setError(err.errors[0].message);
       } else if (err?.message) {
@@ -130,7 +146,11 @@ export default function SignupPage() {
         </div>
       </header>
 
-      <div className={`flex flex-1 flex-col md:flex-row ${isRTL ? "md:flex-row-reverse" : ""}`}>
+      <div
+        className={`flex flex-1 flex-col md:flex-row ${
+          isRTL ? "md:flex-row-reverse" : ""
+        }`}
+      >
         {/* Left side - Image (Desktop Only) */}
         <div className="hidden md:block md:w-1/2 relative bg-black">
           <Image
@@ -161,7 +181,8 @@ export default function SignupPage() {
                 {step === 4 && "Account Created!"}
               </h1>
               <p className="text-gray-600">
-                {step === 1 && "Choose the type of account that fits your needs"}
+                {step === 1 &&
+                  "Choose the type of account that fits your needs"}
                 {step === 2 && "Enter your details to get started"}
                 {step === 3 && `We sent a code to ${email}`}
                 {step === 4 && "Your account is ready to use"}
@@ -172,18 +193,22 @@ export default function SignupPage() {
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <div className="flex items-start">
-                  <svg 
-                    className="w-5 h-5 text-red-500 mt-0.5 mr-2 flex-shrink-0" 
-                    fill="currentColor" 
+                  <svg
+                    className="w-5 h-5 text-red-500 mt-0.5 mr-2 flex-shrink-0"
+                    fill="currentColor"
                     viewBox="0 0 20 20"
                   >
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   <p className="text-sm text-red-700">{error}</p>
                 </div>
               </div>
             )}
-            
+
             {/* Step Components Container */}
             <div className="relative">
               {/* Loading Overlay */}
@@ -197,17 +222,17 @@ export default function SignupPage() {
                   </div>
                 </div>
               )}
-              
+
               {/* Step Components */}
               {step === 1 && <StepUserType />}
               {step === 2 && (
-                <StepUserDetails 
+                <StepUserDetails
                   onSubmit={handleUserDetailsSubmit}
                   isLoading={isLoading}
                 />
               )}
               {step === 3 && (
-                <StepOTPVerify 
+                <StepOTPVerify
                   onVerify={handleOTPVerify}
                   isLoading={isLoading}
                   email={email}
